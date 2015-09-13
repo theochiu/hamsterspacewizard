@@ -26,10 +26,19 @@
         }
 
         var hsw;
+        var baddie;
         var cursors;
+        var tween;
+
+        var one;
+        var two;
+        var three;
+        var four;
+        var five;
 
         var beam;
         var beams;
+        var beam_value = 1;
         var beamTime = 0;
         var flipTime = 0;
 
@@ -37,13 +46,14 @@
 
             game.add.tileSprite(0, 0, game.width, game.height, 'space');
             hsw = game.add.sprite(game.world.centerX, game.world.centerY, 'hsw');
-            baddie = game.add.sprite(game.world.centerX + 100, game.world.centerY + 100, 'baddie');
             hsw.anchor.setTo(0.5, 0.5);
-            baddie.anchor.setTo(0.5, 0.5);
+
+            spawn();
 
             //  hamster physics settings
             game.physics.arcade.enableBody(hsw);
             game.physics.enable(hsw, Phaser.Physics.ARCADE);
+
 
             hsw.body.drag.set(100);
             hsw.body.maxVelocity.set(200);
@@ -61,11 +71,64 @@
             cursors = game.input.keyboard.createCursorKeys();
             game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
 
+            one = game.input.keyboard.addKey([Phaser.Keyboard.ONE]);
+            two = game.input.keyboard.addKey([Phaser.Keyboard.TWO]);
+            three = game.input.keyboard.addKey([Phaser.Keyboard.THREE]);
+            four = game.input.keyboard.addKey([Phaser.Keyboard.FOUR]);
+            five = game.input.keyboard.addKey([Phaser.Keyboard.FIVE]);
+
+        }
+
+        function spawn() {
+            baddie = game.add.sprite(game.world.randomX, game.world.randomY + 100, 'baddie');
+            baddie.anchor.setTo(0.5, 0.5);
+            baddie.number = 5;
+
+            game.physics.arcade.enableBody(baddie);
+            game.physics.enable(baddie, Phaser.Physics.ARCADE);
         }
 
         function update() {
 
+          game.physics.arcade.moveToObject(baddie, hsw);
 
+          hamster_control();
+
+          beam_control();
+
+          if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
+          {
+              fireBeam();
+          }
+
+          //  Run collision
+          game.physics.arcade.overlap(beams, baddie, collisionHandler, null, this);
+        }
+
+        function beam_control() {
+            if (one.isDown) {
+              beam_value = 1;
+            }
+
+            if (two.isDown) {
+              beam_value = 2;
+            }
+
+            if (three.isDown) {
+              beam_value = 3;
+            }
+
+            if (four.isDown) {
+              beam_value = 4;
+            }
+
+            if (five.isDown) {
+              beam_value = 5;
+            }
+        }
+
+        function hamster_control() {
+          //hamster control
           if (cursors.up.isDown)
           {
               game.physics.arcade.accelerationFromRotation(hsw.rotation+300, 300, hsw.body.acceleration);
@@ -92,19 +155,32 @@
               hsw.anchor.setTo(.5, .5);
               flipTime = game.time.now + 100;
             }
-          }
-
-
-          else
-          {
-              hsw.body.angularVelocity = 0;
-          }
-
-          if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
-          {
-              fireBeam();
-          }
         }
+
+
+        else
+        {
+            hsw.body.angularVelocity = 0;
+        }
+      }
+
+        function collisionHandler (baddie, bullet) {
+
+            //  When a bullet hits an alien we kill them both
+
+            //console.log(baddie.number);
+            baddie.number = baddie.number - bullet.number;
+            if (baddie.number == 0) {
+              baddie.kill();
+              spawn();
+            }
+
+            bullet.kill();
+
+            //spawn a new baddie
+
+        }
+
 
         function fireBeam () {
             if (game.time.now > beamTime)
@@ -113,12 +189,9 @@
 
                 if (beam)
                 {
-
+                    beam.number = beam_value;
                     x_offset = 25 * Math.cos(hsw.rotation + (Math.PI/2));
                     y_offset = 25 * Math.sin(hsw.rotation + (Math.PI/2));
-
-                    //console.log(x_offset);
-                    console.log(x_offset);
 
                     beam.reset(hsw.body.x - x_offset + 25, hsw.body.y - y_offset + 50);
                     beam.lifespan = 1000;
