@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>Hamster Space Wizard</title>
+        <script src="./phaser/phaser.min.js"></script>
+    </head>
+    <body>
+
+    <script type="text/javascript">
+
+
+
+    window.onload = function() {
+
+        var game = new Phaser.Game(800, 600, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+
+        function preload () {
+
+            game.load.image('space', 'deep-space.jpg');
+            game.load.image('hsw', 'hsw.png');
+            game.load.image('baddie', 'baddie.png');
+            game.load.image('beam', 'bullets.png');
+
+
+        }
+
+        var hsw;
+        var cursors;
+
+        var beam;
+        var beams;
+        var beamTime = 0;
+
+        function create () {
+
+            game.add.tileSprite(0, 0, game.width, game.height, 'space');
+            hsw = game.add.sprite(game.world.centerX, game.world.centerY, 'hsw');
+            baddie = game.add.sprite(game.world.centerX + 100, game.world.centerY + 100, 'baddie');
+            hsw.anchor.setTo(0.5, 0.5);
+            baddie.anchor.setTo(0.5, 0.5);
+
+            //  hamster physics settings
+            game.physics.arcade.enableBody(hsw);
+            game.physics.enable(hsw, Phaser.Physics.ARCADE);
+
+            hsw.body.drag.set(100);
+            hsw.body.maxVelocity.set(200);
+
+            //  hamster eye beams
+            beams = game.add.group();
+            beams.enableBody = true;
+            beams.physicsBodyType = Phaser.Physics.ARCADE;
+            beams.createMultiple(40, 'beam');
+            beams.setAll('anchor.x', 0.5);
+            beams.setAll('anchor.y', 0.5);
+
+
+            //  Game input
+            cursors = game.input.keyboard.createCursorKeys();
+            game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
+
+        }
+
+        function update() {
+
+
+          if (cursors.up.isDown)
+          {
+              game.physics.arcade.accelerationFromRotation(hsw.rotation+300, 300, hsw.body.acceleration);
+          }
+          else
+          {
+              hsw.body.acceleration.set(0);
+          }
+
+          if (cursors.left.isDown)
+          {
+              hsw.body.angularVelocity = -300;
+          }
+          else if (cursors.right.isDown)
+          {
+              hsw.body.angularVelocity = 300;
+          }
+          else
+          {
+              hsw.body.angularVelocity = 0;
+          }
+
+          if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
+          {
+              fireBeam();
+          }
+        }
+
+        function fireBeam () {
+            if (game.time.now > beamTime)
+            {
+                beam = beams.getFirstExists(false);
+
+                if (beam)
+                {
+
+                    x_offset = 25 * Math.cos(hsw.rotation + (Math.PI/2));
+                    y_offset = 25 * Math.sin(hsw.rotation + (Math.PI/2));
+
+
+
+                    //console.log(x_offset);
+                    console.log(x_offset);
+
+                    beam.reset(hsw.body.x - x_offset + 25, hsw.body.y - y_offset + 50);
+                    beam.lifespan = 1000;
+                    beam.rotation = hsw.rotation;
+                    game.physics.arcade.velocityFromRotation(hsw.rotation, -400, beam.body.velocity);
+                    beamTime = game.time.now + 50;
+                }
+            }
+
+        }
+
+    };
+
+    </script>
+
+    </body>
+</html>
