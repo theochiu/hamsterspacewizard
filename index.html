@@ -31,6 +31,7 @@
         var beam;
         var beams;
         var beamTime = 0;
+        var flipTime = 0;
 
         function create () {
 
@@ -82,6 +83,18 @@
           {
               hsw.body.angularVelocity = 300;
           }
+          else if (cursors.down.isDown)
+          {
+            if (game.time.now > flipTime)
+            {
+              hsw.anchor.setTo(.5, 1); //so it flips around its middle
+              hsw.scale.x = hsw.scale.x * -1; //flip
+              hsw.anchor.setTo(.5, .5);
+              flipTime = game.time.now + 100;
+            }
+          }
+
+
           else
           {
               hsw.body.angularVelocity = 0;
@@ -104,16 +117,14 @@
                     x_offset = 25 * Math.cos(hsw.rotation + (Math.PI/2));
                     y_offset = 25 * Math.sin(hsw.rotation + (Math.PI/2));
 
-
-
                     //console.log(x_offset);
                     console.log(x_offset);
 
                     beam.reset(hsw.body.x - x_offset + 25, hsw.body.y - y_offset + 50);
                     beam.lifespan = 1000;
                     beam.rotation = hsw.rotation;
-                    game.physics.arcade.velocityFromRotation(hsw.rotation, -400, beam.body.velocity);
-                    beamTime = game.time.now + 50;
+                    game.physics.arcade.velocityFromRotation(hsw.rotation, -400 * hsw.scale.x, beam.body.velocity);
+                    beamTime = game.time.now + 250;
                 }
             }
 
