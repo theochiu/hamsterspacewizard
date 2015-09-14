@@ -13,6 +13,25 @@
 
     window.onload = function() {
 
+        function xArray(a) {
+          this.a = a;
+          this.i = 0;
+          this.cur = this.a[this.i];
+
+          this.next = function () {
+            if (this.i == this.a.length-1) {
+              this.i = 0;
+            }
+            else {
+              this.i = this.i + 1;
+            }
+            this.cur = this.a[this.i];
+            return this.cur;
+          }
+
+        }
+
+
         var game = new Phaser.Game(800, 600, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
 
         function preload () {
@@ -26,13 +45,6 @@
 
             game.load.audio('calm', ['calm.mp3', 'calm.ogg']);
 
-
-            //  Load the Google WebFont Loader script
-            game.load.script('webfont', '//ajax.googleapis.com/ajax/libs/webfont/1.4.7/webfont.js');
-
-
-
-
         }
 
         var music;
@@ -43,26 +55,21 @@
         var cursors;
         var tween;
 
-        var one;
-        var two;
-        var three;
-        var four;
-        var five;
-        var add;
-        var sub;
-
-        var operations = ['-', '+', '/', '*'];
+        var switch_operation;
+        var switch_operand;
+        var operations = new xArray(['-', '+']);
+        var operands = new xArray([2, 3]);
 
         var beam;
         var beams;
-        var beam_value = 1;
-        var beam_type = '-';
         var beamTime = 0;
         var flipTime = 0;
-        var max_fuel = 25;
+        var max_fuel = 45;
         var fuel = max_fuel;
 
         var dialog;
+
+
 
         function create () {
 
@@ -108,13 +115,12 @@
             //dialog
             dialog = game.add.text(12, 16, 'Info');
             dialog_style = { font: "16px Arial", fill: "#ffff00", align: "center" };
-            dialog.addChild(game.add.text(12, 32, 'Laser Value:  ' + beam_value, dialog_style));
-            dialog.addChild(game.add.text(12, 48, 'Laser Type:   ' + beam_type, dialog_style));
+            dialog.addChild(game.add.text(12, 32, 'Laser Value:  ' + operands.cur, dialog_style));
+            dialog.addChild(game.add.text(12, 48, 'Laser Type:   ' + operations.cur, dialog_style));
             dialog.addChild(game.add.text(12, 64, 'Fuel:         ' + (fuel/max_fuel) * 100 + '%', dialog_style));
             dialog.fixedToCamera = true;
 
             spawn();
-
 
             hsw.body.drag.set(100);
             hsw.body.maxVelocity.set(200);
@@ -132,14 +138,11 @@
             cursors = game.input.keyboard.createCursorKeys();
             game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
 
-            one = game.input.keyboard.addKey([Phaser.Keyboard.ONE]);
-            two = game.input.keyboard.addKey([Phaser.Keyboard.TWO]);
-            three = game.input.keyboard.addKey([Phaser.Keyboard.THREE]);
-            four = game.input.keyboard.addKey([Phaser.Keyboard.FOUR]);
-            five = game.input.keyboard.addKey([Phaser.Keyboard.FIVE]);
+            switch_operation = game.input.keyboard.addKey([Phaser.Keyboard.X]);
+            switch_operand = game.input.keyboard.addKey([Phaser.Keyboard.Z]);
 
-            add = game.input.keyboard.addKey([Phaser.Keyboard.A]);
-            sub = game.input.keyboard.addKey([Phaser.Keyboard.S]);
+            switch_operation.onDown.add(function() {dialog.children[1].text = 'Laser Type:   ' + operations.next();}, this);
+            switch_operand.onDown.add(function() {dialog.children[0].text = 'Laser Value:  ' + operands.next();}, this);
 
         }
 
@@ -158,12 +161,8 @@
         function update() {
 
           game.physics.arcade.moveToObject(baddie, hsw);
-          //baddie_label.x = baddie.x;
-          //baddie_label.y = baddie.y;
 
           hamster_control();
-
-          beam_control();
 
           if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
           {
@@ -174,38 +173,6 @@
           game.physics.arcade.overlap(beams, baddie, collisionHandler, null, this);
         }
 
-        function beam_control() {
-            if (one.isDown) {
-              beam_value = 1;
-            }
-
-            if (two.isDown) {
-              beam_value = 2;
-            }
-
-            if (three.isDown) {
-              beam_value = 3;
-            }
-
-            if (four.isDown) {
-              beam_value = 4;
-            }
-
-            if (five.isDown) {
-              beam_value = 5;
-            }
-
-            if (add.isDown) {
-              beam_type = '+';
-            }
-
-            if (sub.isDown) {
-              beam_type = '-';
-            }
-
-            dialog.children[0].text = 'Laser Value:  ' + beam_value;
-            dialog.children[1].text = 'Laser Type:   ' + beam_type;
-        }
 
         function hamster_control() {
           //hamster control
@@ -213,7 +180,7 @@
 
           if (cursors.up.isDown && fuel > 0)
           {
-              fuel = fuel - 1;
+              fuel = fuel - .75;
               dialog.children[2].text = 'Fuel:         ' + Math.round((fuel/max_fuel) * 100) + '%';
               game.physics.arcade.accelerationFromRotation(hsw.rotation+300, 1000, hsw.body.acceleration);
               hsw.children[1].start(true, 10, frequency=10, quantity=10);
@@ -263,7 +230,7 @@
             //  When a bullet hits an alien we kill them both
 
             //console.log(baddie.number);
-            baddie.number = eval(baddie.number + beam_type + bullet.number);
+            baddie.number = eval(baddie.number + operations.cur + bullet.number);
             baddie_label.text = baddie.number;
             if (baddie.number == 0) {
               baddie.kill();
@@ -285,7 +252,7 @@
 
                 if (beam)
                 {
-                    beam.number = beam_value;
+                    beam.number = operands.cur;
                     x_offset = 25 * Math.cos(hsw.rotation + (Math.PI/2));
                     y_offset = 25 * Math.sin(hsw.rotation + (Math.PI/2));
 
