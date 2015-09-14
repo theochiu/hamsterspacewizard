@@ -17,11 +17,12 @@
 
         function preload () {
 
-            game.load.image('space', 'deep-space.jpg');
+            game.load.image('space', 'stars.jpg');
             game.load.image('hsw', 'hsw.png');
             game.load.image('baddie', 'baddie.png');
             game.load.image('beam', 'bullets.png');
             game.load.image('eyeglow', 'red.png');
+            game.load.image('rocketflare', 'flame.png');
 
             game.load.audio('calm', ['calm.mp3', 'calm.ogg']);
 
@@ -58,46 +59,61 @@
         var beam_type = '-';
         var beamTime = 0;
         var flipTime = 0;
+        var max_fuel = 25;
+        var fuel = max_fuel;
+
+        var dialog;
 
         function create () {
 
             //add world bounds
-            game.world.setBounds(0, 0, 800, 800);
+            game.world.setBounds(0, 0, 1000, 800);
+            game.world.resize(1000, 800);
             game.physics.setBoundsToWorld();
 
             //game.physics.startSystem(Phaser.Physics.P2JS);
 
-            game.add.tileSprite(0, 0, game.width, game.height, 'space');
+            game.add.tileSprite(0, 0, 1000, 800, 'space');
             hsw = game.add.sprite(game.world.centerX, game.world.centerY, 'hsw');
+            //  hamster physics settings
+            game.physics.arcade.enableBody(hsw);
+            game.physics.enable(hsw, Phaser.Physics.ARCADE);
 
+            hsw.body.collideWorldBounds=true;
             game.camera.follow(hsw);
 
 
 
             music = game.add.audio('calm');
+            music.loop = true;
             music.play();
 
 
             hsw.anchor.setTo(0.5, 0.5);
 
-            emitter = game.add.emitter(0, -25, 50);
+            //glowing eyes
+            emitter = game.add.emitter(0, -25, 5);
             emitter.makeParticles('eyeglow');
 
+            //rocket flare
+            emitter2 = game.add.emitter(11, 35, 10);
+            emitter2.makeParticles('rocketflare');
+            emitter2.gravity = 500;
+
+
             hsw.addChild(emitter);
+            hsw.addChild(emitter2);
 
 
             //dialog
+            dialog = game.add.text(12, 16, 'Info');
             dialog_style = { font: "16px Arial", fill: "#ffff00", align: "center" };
-            bvt = game.add.text(12, 16, 'Laser Value:  ' + beam_value, dialog_style);
-            bvt.fixedToCamera = true;
-            btt = game.add.text(12, 32, 'Laser Type:   ' + beam_type, dialog_style);
-            btt.fixedToCamera = true;
+            dialog.addChild(game.add.text(12, 32, 'Laser Value:  ' + beam_value, dialog_style));
+            dialog.addChild(game.add.text(12, 48, 'Laser Type:   ' + beam_type, dialog_style));
+            dialog.addChild(game.add.text(12, 64, 'Fuel:         ' + (fuel/max_fuel) * 100 + '%', dialog_style));
+            dialog.fixedToCamera = true;
 
             spawn();
-
-            //  hamster physics settings
-            game.physics.arcade.enableBody(hsw);
-            game.physics.enable(hsw, Phaser.Physics.ARCADE);
 
 
             hsw.body.drag.set(100);
@@ -187,19 +203,33 @@
               beam_type = '-';
             }
 
-            bvt.text = 'Laser Value:  ' + beam_value;
-            btt.text = 'Laser Type:   ' + beam_type;
+            dialog.children[0].text = 'Laser Value:  ' + beam_value;
+            dialog.children[1].text = 'Laser Type:   ' + beam_type;
         }
 
         function hamster_control() {
           //hamster control
-          if (cursors.up.isDown)
+
+
+          if (cursors.up.isDown && fuel > 0)
           {
-              game.physics.arcade.accelerationFromRotation(hsw.rotation+300, 300, hsw.body.acceleration);
+              fuel = fuel - 1;
+              dialog.children[2].text = 'Fuel:         ' + Math.round((fuel/max_fuel) * 100) + '%';
+              game.physics.arcade.accelerationFromRotation(hsw.rotation+300, 1000, hsw.body.acceleration);
+              hsw.children[1].start(true, 10, frequency=10, quantity=10);
           }
           else
           {
               hsw.body.acceleration.set(0);
+          }
+
+          if (cursors.up.isUp) {
+            hsw.children[1].kill();
+            if (fuel < max_fuel) {
+              fuel = fuel + 0.12;
+              dialog.children[2].text = 'Fuel:         ' + Math.round((fuel/max_fuel) * 100) + '%';
+            }
+
           }
 
           if (cursors.left.isDown)
@@ -262,7 +292,7 @@
                     hsw.children[0].start(false, 100, frequency=10, quantity=3);
 
                     beam.reset(hsw.body.x - x_offset + 25, hsw.body.y - y_offset + 50);
-                    beam.lifespan = 1000;
+                    beam.lifespan = 2000;
                     beam.rotation = hsw.rotation;
                     game.physics.arcade.velocityFromRotation(hsw.rotation, -400 * hsw.scale.x, beam.body.velocity);
                     beamTime = game.time.now + 250;
