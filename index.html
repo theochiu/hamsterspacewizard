@@ -17,6 +17,11 @@
           this.i = 0;
           this.cur = this.a[this.i];
 
+          this.s = "";
+          for (j=0; j<a.length; j++) {
+            this.s = this.s + " " + a[j];
+          }
+
           this.next = function () {
             if (this.i == this.a.length-1) {
               this.i = 0;
@@ -65,9 +70,11 @@
         var beams;
         var beamTime = 0;
         var flipTime = 0;
-        var max_fuel = 45;
+        var max_fuel = 100;
         var fuel = max_fuel;
+        var fuel_gauge;
 
+        var hamalog;
         var dialog;
 
         function create () {
@@ -85,6 +92,7 @@
 
             hsw.body.collideWorldBounds=true;
             game.camera.follow(hsw);
+
 
             //add black hole
             black_hole = game.add.sprite(game.world.randomX, game.world.randomY, 'black_hole');
@@ -117,11 +125,16 @@
 
 
             //dialog
-            dialog = game.add.text(12, 16, 'Info');
-            dialog_style = { font: "16px Arial", fill: "#ffff00", align: "center" };
-            dialog.addChild(game.add.text(12, 32, '(Z) Laser Value:  ' + operands.cur, dialog_style));
-            dialog.addChild(game.add.text(12, 48, '(X) Laser Type:   ' + operations.cur, dialog_style));
-            dialog.addChild(game.add.text(12, 64, 'Fuel:         ' + (fuel/max_fuel) * 100 + '%', dialog_style));
+            dialog = game.add.text(325, 500, 'Info');
+            dialog_style = { font: "16px Arial", fill: "#eeeeee", align: "center" };
+            dialog.addChild(game.add.text(12, 32, '(Z) Laser Powers:  ' + operands.s, dialog_style));
+            dialog.addChild(game.add.text(12, 48, '(X) Laser Types:   ' + operations.s, dialog_style));
+            dialog.addChild(game.add.text(12, 64, 'Fuel:' , dialog_style));
+            //dialog.addChild(game.add.sprite(game.add.bitmapData(100, 10)));
+
+            fuel_gauge = game.add.bitmapData(100, 10);
+            dialog.addChild(game.add.sprite(50, 69,fuel_gauge));
+
             dialog.fixedToCamera = true;
 
             baddies = game.add.group();
@@ -148,8 +161,12 @@
             switch_operation = game.input.keyboard.addKey([Phaser.Keyboard.X]);
             switch_operand = game.input.keyboard.addKey([Phaser.Keyboard.Z]);
 
-            switch_operation.onDown.add(function() {dialog.children[1].text = '(X) Laser Type:   ' + operations.next();}, this);
-            switch_operand.onDown.add(function() {dialog.children[0].text = '(Z) Laser Value:  ' + operands.next();}, this);
+            switch_operation.onDown.add(function() { hamalog.text = operations.next()}, this);
+            switch_operand.onDown.add(function() {hamalog.children[0].text = operands.next()}, this);
+
+            //add operation and operand indicators to hamster
+            hamalog = game.add.text(hsw.body.centerX, hsw.body.y, operations.cur, dialog_style);
+            hamalog.addChild(game.add.text(10, 0, operands.cur, dialog_style));
 
         }
 
@@ -180,6 +197,20 @@
         }
 
         function update() {
+          fuel_gauge.context.clearRect(0, 0, 100, 10);
+          fuel_gauge.context.fillRect(0, 0, Math.round(fuel), 10);
+          // important - without this line, the context will never be updated on the GPU when using webGL
+          fuel_gauge.dirty = true;
+
+          if (fuel < 26) {
+             fuel_gauge.context.fillStyle = '#f00';
+          }
+          else if (fuel < 50) {
+              fuel_gauge.context.fillStyle = '#ff0';
+          }
+          else {
+              fuel_gauge.context.fillStyle = '#0f0';
+          }
 
           //baddie physics
           for (i = 0; i < baddies.length; i++) {
@@ -201,10 +232,12 @@
         }
 
         function hamster_control() {
+          hamalog.x = hsw.body.x;
+          hamalog.y = hsw.body.y;
+
           if (cursors.up.isDown && fuel > 0)
           {
-              fuel = fuel - .75;
-              dialog.children[2].text = 'Fuel:         ' + Math.round((fuel/max_fuel) * 100) + '%';
+              fuel = fuel - 1.5;
               game.physics.arcade.accelerationFromRotation(hsw.rotation+300, 1000, hsw.body.acceleration);
               hsw.children[1].start(true, 10, frequency=10, quantity=10);
           }
@@ -216,8 +249,7 @@
           if (cursors.up.isUp) {
             hsw.children[1].kill();
             if (fuel < max_fuel) {
-              fuel = fuel + 0.12;
-              dialog.children[2].text = 'Fuel:         ' + Math.round((fuel/max_fuel) * 100) + '%';
+              fuel = fuel + 0.75;
             }
 
           }
@@ -225,10 +257,12 @@
           if (cursors.left.isDown)
           {
               hsw.body.angularVelocity = -300;
+
           }
           else if (cursors.right.isDown)
           {
               hsw.body.angularVelocity = 300;
+
           }
           else if (cursors.down.isDown)
           {
