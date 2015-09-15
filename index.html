@@ -185,6 +185,7 @@
           for (i = 0; i < baddies.length; i++) {
             game.physics.arcade.moveToObject(baddies.children[i], hsw);
             game.physics.arcade.overlap(beams, baddies.children[i], collisionHandler, null, this);
+            game.physics.arcade.collide(hsw, baddies.children[i]);
 
           }
 
