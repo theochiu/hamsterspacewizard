@@ -125,11 +125,11 @@
 
 
             //dialog
-            dialog = game.add.text(325, 500, 'Info');
             dialog_style = { font: "16px Arial", fill: "#eeeeee", align: "center" };
-            dialog.addChild(game.add.text(12, 32, '(Z) Laser Powers:  ' + operands.s, dialog_style));
-            dialog.addChild(game.add.text(12, 48, '(X) Laser Types:   ' + operations.s, dialog_style));
-            dialog.addChild(game.add.text(12, 64, 'Fuel:' , dialog_style));
+            dialog = game.add.text(325, 500, "Inventory", dialog_style);
+            dialog.addChild(game.add.text(0, 32, '(Z) Laser Powers:  ' + operands.s, dialog_style));
+            dialog.addChild(game.add.text(0, 48, '(X) Laser Types:   ' + operations.s, dialog_style));
+            dialog.addChild(game.add.text(0, 64, 'Fuel:' , dialog_style));
             //dialog.addChild(game.add.sprite(game.add.bitmapData(100, 10)));
 
             fuel_gauge = game.add.bitmapData(100, 10);
@@ -161,12 +161,27 @@
             switch_operation = game.input.keyboard.addKey([Phaser.Keyboard.X]);
             switch_operand = game.input.keyboard.addKey([Phaser.Keyboard.Z]);
 
-            switch_operation.onDown.add(function() { hamalog.text = operations.next()}, this);
-            switch_operand.onDown.add(function() {hamalog.children[0].text = operands.next()}, this);
+            switch_operation.onDown.add(function()
+                { hamalog.text = operations.next();
+                  hamalog.alpha=1;
+                  hamalog.setStyle(dialog_style);
+                  hamalog.children[0].setStyle(dialog_style);
+                  game.add.tween(hamalog).to( { alpha: 0 }, 2000, Phaser.Easing.Linear.None, true);
+                }, this
+              );
+            switch_operand.onDown.add(function()
+                { hamalog.children[0].text = operands.next();
+                  hamalog.alpha=1;
+                  hamalog.setStyle(dialog_style);
+                  hamalog.children[0].setStyle(dialog_style);
+                  game.add.tween(hamalog).to( { alpha: 0 }, 2000, Phaser.Easing.Linear.None, true);
+                }, this
+              );
 
             //add operation and operand indicators to hamster
             hamalog = game.add.text(hsw.body.centerX, hsw.body.y, operations.cur, dialog_style);
             hamalog.addChild(game.add.text(10, 0, operands.cur, dialog_style));
+            hamalog.alpha = 0;
 
         }
 
@@ -307,6 +322,12 @@
 
                 if (beam)
                 {
+
+                    hamalog.alpha=1;
+                    hamalog.setStyle({font: "16px Arial", fill: "#ff5555", align: "center"});
+                    hamalog.children[0].setStyle({font: "16px Arial", fill: "#ff5555", align: "center"})
+                    game.add.tween(hamalog).to( { alpha: 0 }, 2000, Phaser.Easing.Linear.None, true);
+
                     beam.number = operands.cur;
                     x_offset = 25 * Math.cos(hsw.rotation + (Math.PI/2));
                     y_offset = 25 * Math.sin(hsw.rotation + (Math.PI/2));
