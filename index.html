@@ -42,6 +42,7 @@
             game.load.image('beam', 'bullets.png');
             game.load.image('eyeglow', 'red.png');
             game.load.image('rocketflare', 'flame.png');
+            game.load.image('black_hole', 'black_hole.png');
 
             game.load.audio('calm', ['calm.mp3', 'calm.ogg']);
 
@@ -50,8 +51,8 @@
         var music;
 
         var hsw;
-        var baddie;
-        var baddie_label;
+        var baddies;
+        var block_hole;
         var cursors;
         var tween;
 
@@ -89,12 +90,12 @@
             hsw.body.collideWorldBounds=true;
             game.camera.follow(hsw);
 
-
+            //add black hole
+            black_hole = game.add.sprite(game.world.randomX, game.world.randomY, 'black_hole');
 
             music = game.add.audio('calm');
             music.loop = true;
             music.play();
-
 
             hsw.anchor.setTo(0.5, 0.5);
 
@@ -111,16 +112,19 @@
             hsw.addChild(emitter);
             hsw.addChild(emitter2);
 
-
             //dialog
             dialog = game.add.text(12, 16, 'Info');
             dialog_style = { font: "16px Arial", fill: "#ffff00", align: "center" };
-            dialog.addChild(game.add.text(12, 32, 'Laser Value:  ' + operands.cur, dialog_style));
-            dialog.addChild(game.add.text(12, 48, 'Laser Type:   ' + operations.cur, dialog_style));
+            dialog.addChild(game.add.text(12, 32, '(Z) Laser Value:  ' + operands.cur, dialog_style));
+            dialog.addChild(game.add.text(12, 48, '(X) Laser Type:   ' + operations.cur, dialog_style));
             dialog.addChild(game.add.text(12, 64, 'Fuel:         ' + (fuel/max_fuel) * 100 + '%', dialog_style));
             dialog.fixedToCamera = true;
 
-            spawn();
+            baddies = game.add.group();
+            baddies.enableBody = true;
+            baddies.physicsBodyType = Phaser.Physics.ARCADE;
+
+            spawn(1);
 
             hsw.body.drag.set(100);
             hsw.body.maxVelocity.set(200);
@@ -141,26 +145,43 @@
             switch_operation = game.input.keyboard.addKey([Phaser.Keyboard.X]);
             switch_operand = game.input.keyboard.addKey([Phaser.Keyboard.Z]);
 
-            switch_operation.onDown.add(function() {dialog.children[1].text = 'Laser Type:   ' + operations.next();}, this);
-            switch_operand.onDown.add(function() {dialog.children[0].text = 'Laser Value:  ' + operands.next();}, this);
+            switch_operation.onDown.add(function() {dialog.children[1].text = '(X) Laser Type:   ' + operations.next();}, this);
+            switch_operand.onDown.add(function() {dialog.children[0].text = '(Z) Laser Value:  ' + operands.next();}, this);
 
         }
 
-        function spawn() {
-            baddie = game.add.sprite(game.world.randomX, game.world.randomY + 100, 'baddie');
+        function spawn(n) {
+          for (i = 0; i < n; i ++) {
+            number = Math.round(Math.random() * 10);
+            if (number == 0) {
+              number = 10;
+            }
+
+            baddie = create_baddie(black_hole.x, black_hole.y, number);
+            baddies.add(baddie);
+          }
+
+        }
+
+        function create_baddie(x, y, number) {
+            baddie = game.add.sprite(x, y, 'baddie');
             baddie.anchor.setTo(0.5, 0.5);
-            baddie.number = 5;
             var style = { font: "20px Arial", fill: "#ffff00", align: "center" };
-            baddie_label = baddie.addChild(game.add.text(-6, -30, baddie.number, style));
-
+            baddie.number = number;
+            baddie.addChild(game.add.text(-6, -30, number, style));
             game.physics.arcade.enableBody(baddie);
-
             game.physics.enable(baddie, Phaser.Physics.ARCADE);
+            return baddie;
         }
 
         function update() {
 
-          game.physics.arcade.moveToObject(baddie, hsw);
+          //baddie physics
+          for (i = 0; i < baddies.length; i++) {
+            game.physics.arcade.moveToObject(baddies.children[i], hsw);
+            game.physics.arcade.overlap(beams, baddies.children[i], collisionHandler, null, this);
+
+          }
 
           hamster_control();
 
@@ -169,15 +190,10 @@
               fireBeam();
           }
 
-          //  Run collision
-          game.physics.arcade.overlap(beams, baddie, collisionHandler, null, this);
         }
 
 
         function hamster_control() {
-          //hamster control
-
-
           if (cursors.up.isDown && fuel > 0)
           {
               fuel = fuel - .75;
@@ -230,18 +246,15 @@
             //  When a bullet hits an alien we kill them both
 
             //console.log(baddie.number);
+            console.log(baddie.number);
             baddie.number = eval(baddie.number + operations.cur + bullet.number);
-            baddie_label.text = baddie.number;
+            baddie.children[0].text = baddie.number;
             if (baddie.number == 0) {
               baddie.kill();
-              baddie_label.kill();
-              spawn();
+              spawn(1);
             }
 
             bullet.kill();
-
-            //spawn a new baddie
-
         }
 
 
