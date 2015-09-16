@@ -12,15 +12,25 @@
 
     window.onload = function() {
 
-        function xArray(a) {
+        function dialog_list(a, x, y) {
           this.a = a;
           this.i = 0;
           this.cur = this.a[this.i];
+          this.dialog = false;
 
           this.s = "";
+
+          this.items = game.add.group();
+          this.items.x = x;
+          this.items.y = y;
+          //this.t = game.add.text(x, y, this.cur, {fill:'#fff', font:'16px Arial'});
+
           for (j=0; j<a.length; j++) {
-            this.s = this.s + " " + a[j];
+            this.items.add(game.add.text(j * 10, 0, this.a[j], {fill:'#aaa', font:'16px Arial'}));
           }
+
+          this.items.children[0].setStyle({fill:'#ff0', font:'16px Arial'});
+          this.items.setAll('fixedToCamera', true);
 
           this.next = function () {
             if (this.i == this.a.length-1) {
@@ -30,6 +40,9 @@
               this.i = this.i + 1;
             }
             this.cur = this.a[this.i];
+            this.items.setAll('fill', '#aaa');
+            this.items.children[this.i].setStyle({fill:'#ff0', font:'16px Arial'})
+
             return this.cur;
           }
 
@@ -61,8 +74,8 @@
 
         var switch_operation;
         var switch_operand;
-        var operations = new xArray(['-', '+']);
-        var operands = new xArray([2, 3, 5]);
+        var operations;
+        var operands;
 
         var explosions;
 
@@ -123,17 +136,18 @@
                 explosionAnimation.animations.add('kaboom');
             }
 
-
             //dialog
             dialog_style = { font: "16px Arial", fill: "#eeeeee", align: "center" };
             dialog = game.add.text(325, 500, "Inventory", dialog_style);
-            dialog.addChild(game.add.text(0, 32, '(Z) Laser Powers:  ' + operands.s, dialog_style));
-            dialog.addChild(game.add.text(0, 48, '(X) Laser Types:   ' + operations.s, dialog_style));
-            dialog.addChild(game.add.text(0, 64, 'Fuel:' , dialog_style));
-            //dialog.addChild(game.add.sprite(game.add.bitmapData(100, 10)));
+            dialog.addChild(game.add.text(0, 16, '(Z) Laser Type:  ', dialog_style));
+            dialog.addChild(game.add.text(0, 32, '(X) Laser Power: ', dialog_style));
+            dialog.addChild(game.add.text(0, 48, 'Fuel:' , dialog_style));
 
             fuel_gauge = game.add.bitmapData(100, 10);
-            dialog.addChild(game.add.sprite(50, 69,fuel_gauge));
+            dialog.addChild(game.add.sprite(50, 53,fuel_gauge));
+
+            operations = new dialog_list(['-', '+'], 450, 516);
+            operands = new dialog_list([2,3,4], 450, 532);
 
             dialog.fixedToCamera = true;
 
@@ -158,8 +172,8 @@
             cursors = game.input.keyboard.createCursorKeys();
             game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
 
-            switch_operation = game.input.keyboard.addKey([Phaser.Keyboard.X]);
-            switch_operand = game.input.keyboard.addKey([Phaser.Keyboard.Z]);
+            switch_operation = game.input.keyboard.addKey([Phaser.Keyboard.Z]);
+            switch_operand = game.input.keyboard.addKey([Phaser.Keyboard.X]);
 
             switch_operation.onDown.add(function()
                 { hamalog.text = operations.next();
