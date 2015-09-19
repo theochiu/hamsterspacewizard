@@ -1,366 +1,42 @@
-<!doctype html>
+<!DOCTYPE HTML>
 <html>
-    <head>
-        <meta charset="UTF-8" />
-        <title>Hamster Space Wizard</title>
-        <script src="./phaser/phaser.min.js"></script>
-        <link rel="icon" type="image/png" href="favicon.png">
-    </head>
-    <body>
+<head>
+	<meta charset="UTF-8" />
+	<title>Hamster Space Wizard</title>
+	<script src="js/phaser.min.js"></script>
+	<script src="js/Boot.js"></script>
+	<script src="js/Preloader.js"></script>
+	<script src="js/MainMenu.js"></script>
+	<script src="js/Game.js"></script>
+	<script src="js/common.js"></script>
 
-    <script type="text/javascript">
+	</script>
+</head>
+<body>
 
-    window.onload = function() {
+<div id="gameContainer"></div>
 
-        function dialog_list(a, x, y) {
-          this.a = a;
-          this.i = 0;
-          this.cur = this.a[this.i];
-          this.dialog = false;
+<script type="text/javascript">
 
-          this.s = "";
+window.onload = function() {
 
-          this.items = game.add.group();
-          this.items.x = x;
-          this.items.y = y;
-          //this.t = game.add.text(x, y, this.cur, {fill:'#fff', font:'16px Arial'});
+	//	Create your Phaser game and inject it into the gameContainer div.
+	//	We did it in a window.onload event, but you can do it anywhere (requireJS load, anonymous function, jQuery dom ready, - whatever floats your boat)
+	var game = new Phaser.Game(800, 600, Phaser.AUTO, 'gameContainer');
 
-          for (j=0; j<a.length; j++) {
-            this.items.add(game.add.text(j * 10, 0, this.a[j], {fill:'#aaa', font:'16px Arial'}));
-          }
+	//	Add the States your game has.
+	//	You don't have to do this in the html, it could be done in your Boot state too, but for simplicity I'll keep it here.
+	game.state.add('Boot', BasicGame.Boot);
+	game.state.add('Preloader', BasicGame.Preloader);
+	game.state.add('MainMenu', BasicGame.MainMenu);
+	game.state.add('Game', BasicGame.Game);
 
-          this.items.children[0].setStyle({fill:'#ff0', font:'16px Arial'});
-          this.items.setAll('fixedToCamera', true);
+	//	Now start the Boot state.
+	game.state.start('Boot');
 
-          this.next = function () {
-            if (this.i == this.a.length-1) {
-              this.i = 0;
-            }
-            else {
-              this.i = this.i + 1;
-            }
-            this.cur = this.a[this.i];
-            this.items.setAll('fill', '#aaa');
-            this.items.children[this.i].setStyle({fill:'#ff0', font:'16px Arial'})
+};
 
-            return this.cur;
-          }
+</script>
 
-        }
-
-        var game = new Phaser.Game(800, 600, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
-
-        function preload () {
-
-            game.load.image('space', 'stars.jpg');
-            game.load.image('hsw', 'hsw.png');
-            game.load.image('baddie', 'baddie.png');
-            game.load.image('beam', 'bullets.png');
-            game.load.image('eyeglow', 'red.png');
-            game.load.image('rocketflare', 'flame.png');
-            game.load.image('black_hole', 'black_hole.png');
-            game.load.spritesheet('kaboom', 'explode.png', 128, 128);
-            game.load.audio('calm', ['calm.mp3', 'calm.ogg']);
-
-        }
-
-        var music;
-
-        var hsw;
-        var baddies;
-        var block_hole;
-        var cursors;
-        var tween;
-
-        var switch_operation;
-        var switch_operand;
-        var operations;
-        var operands;
-
-        var explosions;
-
-        var beam;
-        var beams;
-        var beamTime = 0;
-        var flipTime = 0;
-        var max_fuel = 100;
-        var fuel = max_fuel;
-        var fuel_gauge;
-
-        var hamalog;
-        var dialog;
-
-        function create () {
-
-            //add world bounds
-            game.world.setBounds(0, 0, 1000, 800);
-            game.world.resize(1000, 800);
-            game.physics.setBoundsToWorld();
-
-            game.add.tileSprite(0, 0, 1000, 800, 'space');
-            hsw = game.add.sprite(game.world.centerX, game.world.centerY, 'hsw');
-            //  hamster physics settings
-            game.physics.arcade.enableBody(hsw);
-            game.physics.enable(hsw, Phaser.Physics.ARCADE);
-
-            hsw.body.collideWorldBounds=true;
-            game.camera.follow(hsw);
-
-
-            //add black hole
-            black_hole = game.add.sprite(game.world.randomX, game.world.randomY, 'black_hole');
-
-            music = game.add.audio('calm');
-            music.loop = true;
-            music.play();
-
-            hsw.anchor.setTo(0.5, 0.5);
-
-            //glowing eyes
-            emitter = game.add.emitter(0, -25, 5);
-            emitter.makeParticles('eyeglow');
-
-            //rocket flare
-            emitter2 = game.add.emitter(11, 35, 10);
-            emitter2.makeParticles('rocketflare');
-            emitter2.gravity = 500;
-
-            hsw.addChild(emitter);
-            hsw.addChild(emitter2);
-
-            explosions = game.add.group();
-            for (var i = 0; i < 10; i++)
-            {
-                var explosionAnimation = explosions.create(0, 0, 'kaboom', [0], false);
-                explosionAnimation.anchor.setTo(0.5, 0.5);
-                explosionAnimation.animations.add('kaboom');
-            }
-
-            //dialog
-            dialog_style = { font: "16px Arial", fill: "#eeeeee", align: "center" };
-            dialog = game.add.text(325, 500, "Inventory", dialog_style);
-            dialog.addChild(game.add.text(0, 16, '(Z) Laser Type:  ', dialog_style));
-            dialog.addChild(game.add.text(0, 32, '(X) Laser Power: ', dialog_style));
-            dialog.addChild(game.add.text(0, 48, 'Fuel:' , dialog_style));
-
-            fuel_gauge = game.add.bitmapData(100, 10);
-            dialog.addChild(game.add.sprite(50, 53,fuel_gauge));
-
-            operations = new dialog_list(['-', '+'], 450, 516);
-            operands = new dialog_list([2,3,4], 450, 532);
-
-            dialog.fixedToCamera = true;
-
-            baddies = game.add.group();
-            baddies.enableBody = true;
-            baddies.physicsBodyType = Phaser.Physics.ARCADE;
-
-            spawn(1);
-
-            hsw.body.drag.set(100);
-            hsw.body.maxVelocity.set(200);
-
-            //  hamster eye beams
-            beams = game.add.group();
-            beams.enableBody = true;
-            beams.physicsBodyType = Phaser.Physics.ARCADE;
-            beams.createMultiple(40, 'beam');
-            beams.setAll('anchor.x', 0.5);
-            beams.setAll('anchor.y', 0.5);
-
-            //  Game input
-            cursors = game.input.keyboard.createCursorKeys();
-            game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
-
-            switch_operation = game.input.keyboard.addKey([Phaser.Keyboard.Z]);
-            switch_operand = game.input.keyboard.addKey([Phaser.Keyboard.X]);
-
-            switch_operation.onDown.add(function()
-                { hamalog.text = operations.next();
-                  hamalog.alpha=1;
-                  hamalog.setStyle(dialog_style);
-                  hamalog.children[0].setStyle(dialog_style);
-                  game.add.tween(hamalog).to( { alpha: 0 }, 2000, Phaser.Easing.Linear.None, true);
-                }, this
-              );
-            switch_operand.onDown.add(function()
-                { hamalog.children[0].text = operands.next();
-                  hamalog.alpha=1;
-                  hamalog.setStyle(dialog_style);
-                  hamalog.children[0].setStyle(dialog_style);
-                  game.add.tween(hamalog).to( { alpha: 0 }, 2000, Phaser.Easing.Linear.None, true);
-                }, this
-              );
-
-            //add operation and operand indicators to hamster
-            hamalog = game.add.text(hsw.body.centerX, hsw.body.y, operations.cur, dialog_style);
-            hamalog.addChild(game.add.text(10, 0, operands.cur, dialog_style));
-            hamalog.alpha = 0;
-
-        }
-
-        function spawn(n) {
-          for (i = 0; i < n; i ++) {
-            number = Math.round(Math.random() * 10);
-            if (number == 0) {
-              number = 10;
-            }
-
-            baddie = create_baddie(black_hole.x + 50, black_hole.y + 50, number);
-            baddie.animations.add('kaboom');
-            baddie.body.bounce.setTo(1, 1);
-            baddies.add(baddie);
-          }
-
-        }
-
-        function create_baddie(x, y, number) {
-            baddie = game.add.sprite(x, y, 'baddie');
-            baddie.anchor.setTo(0.5, 0.5);
-            var style = { font: "20px Arial", fill: "#ffff00", align: "center" };
-            baddie.number = number;
-            baddie.addChild(game.add.text(-6, -30, number, style));
-            game.physics.arcade.enableBody(baddie);
-            game.physics.enable(baddie, Phaser.Physics.ARCADE);
-            return baddie;
-        }
-
-        function update() {
-          fuel_gauge.context.clearRect(0, 0, 100, 10);
-          fuel_gauge.context.fillRect(0, 0, Math.round(fuel), 10);
-          // important - without this line, the context will never be updated on the GPU when using webGL
-          fuel_gauge.dirty = true;
-
-          if (fuel < 26) {
-             fuel_gauge.context.fillStyle = '#f00';
-          }
-          else if (fuel < 50) {
-              fuel_gauge.context.fillStyle = '#ff0';
-          }
-          else {
-              fuel_gauge.context.fillStyle = '#0f0';
-          }
-
-          //baddie physics
-          for (i = 0; i < baddies.length; i++) {
-            game.physics.arcade.moveToObject(baddies.children[i], hsw);
-            game.physics.arcade.overlap(beams, baddies.children[i], collisionHandler, null, this);
-            game.physics.arcade.collide(hsw, baddies.children[i]);
-
-          }
-
-          game.physics.arcade.collide(baddies);
-
-          hamster_control();
-
-          if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
-          {
-              fireBeam();
-          }
-
-        }
-
-        function hamster_control() {
-          hamalog.x = hsw.body.x;
-          hamalog.y = hsw.body.y;
-
-          if (cursors.up.isDown && fuel > 0)
-          {
-              fuel = fuel - 1.5;
-              game.physics.arcade.accelerationFromRotation(hsw.rotation+300, 1000, hsw.body.acceleration);
-              hsw.children[1].start(true, 10, frequency=10, quantity=10);
-          }
-          else
-          {
-              hsw.body.acceleration.set(0);
-          }
-
-          if (cursors.up.isUp) {
-            hsw.children[1].kill();
-            if (fuel < max_fuel) {
-              fuel = fuel + 0.75;
-            }
-
-          }
-
-          if (cursors.left.isDown)
-          {
-              hsw.body.angularVelocity = -300;
-
-          }
-          else if (cursors.right.isDown)
-          {
-              hsw.body.angularVelocity = 300;
-
-          }
-          else if (cursors.down.isDown)
-          {
-            if (game.time.now > flipTime)
-            {
-              hsw.anchor.setTo(.5, 1); //so it flips around its middle
-              hsw.scale.x = hsw.scale.x * -1; //flip
-              hsw.anchor.setTo(.5, .5);
-              flipTime = game.time.now + 100;
-            }
-        }
-
-
-        else
-        {
-            hsw.body.angularVelocity = 0;
-        }
-      }
-
-        function collisionHandler (baddie, bullet) {
-            //  When a bullet hits an alien we kill them both
-            baddie.number = eval(baddie.number + operations.cur + bullet.number);
-            baddie.children[0].text = baddie.number;
-            if (baddie.number == 0) {
-              baddie.kill();
-
-              var explosionAnimation = explosions.getFirstExists(false);
-              explosionAnimation.reset(baddie.x, baddie.y);
-              explosionAnimation.play('kaboom', 30, false, true);
-
-
-              spawn(1);
-            }
-
-            bullet.kill();
-        }
-
-        function fireBeam () {
-            if (game.time.now > beamTime)
-            {
-                beam = beams.getFirstExists(false);
-
-                if (beam)
-                {
-
-                    hamalog.alpha=1;
-                    hamalog.setStyle({font: "16px Arial", fill: "#ff5555", align: "center"});
-                    hamalog.children[0].setStyle({font: "16px Arial", fill: "#ff5555", align: "center"})
-                    game.add.tween(hamalog).to( { alpha: 0 }, 2000, Phaser.Easing.Linear.None, true);
-
-                    beam.number = operands.cur;
-                    x_offset = 25 * Math.cos(hsw.rotation + (Math.PI/2));
-                    y_offset = 25 * Math.sin(hsw.rotation + (Math.PI/2));
-
-                    hsw.children[0].start(false, 100, frequency=10, quantity=3);
-
-                    beam.reset(hsw.body.x - x_offset + 25, hsw.body.y - y_offset + 50);
-                    beam.lifespan = 2000;
-                    beam.rotation = hsw.rotation;
-                    game.physics.arcade.velocityFromRotation(hsw.rotation, -400 * hsw.scale.x, beam.body.velocity);
-                    beamTime = game.time.now + 250;
-                }
-            }
-
-        }
-
-    };
-
-    </script>
-
-    </body>
+</body>
 </html>
