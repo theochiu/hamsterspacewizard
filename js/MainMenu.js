@@ -19,6 +19,7 @@ BasicGame.MainMenu.prototype = {
 
 
 		this.title = this.add.text(100, 100, 'Hamster. Space. Wizard.', {'font': '36px Arial', 'fill':'#fff'});
+		this.title = this.add.text(200, 175, 'Click on the hamster space wizard to begin hamulation.', {'font': '12px Arial', 'fill':'#fff'});
 		this.playButton = this.add.button(250, 200, 'hsw', this.startGame, this);
 
 

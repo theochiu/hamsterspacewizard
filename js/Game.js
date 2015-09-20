@@ -38,7 +38,6 @@ BasicGame.Game = function (game) {
     this.explosions;
 
     this.beam;
-    this.beams;
     this.beamTime = 0;
     this.flipTime = 0;
     this.max_fuel = 100;
@@ -62,14 +61,9 @@ BasicGame.Game.prototype = {
       game.physics.setBoundsToWorld();
 
       game.add.tileSprite(0, 0, 1000, 800, 'space');
-      hsw = game.add.sprite(game.world.centerX, game.world.centerY, 'hsw');
-      //  hamster physics settings
-      game.physics.arcade.enableBody(hsw);
-      game.physics.enable(hsw, Phaser.Physics.ARCADE);
 
-      hsw.body.collideWorldBounds=true;
-      game.camera.follow(hsw);
 
+      this.hsw = create_hsw(game);
 
       //add black hole
       this.black_hole = game.add.sprite(game.world.randomX, game.world.randomY, 'black_hole');
@@ -77,20 +71,6 @@ BasicGame.Game.prototype = {
       music = game.add.audio('calm');
       music.loop = true;
       music.play();
-
-      hsw.anchor.setTo(0.5, 0.5);
-
-      //glowing eyes
-      emitter = game.add.emitter(0, -25, 5);
-      emitter.makeParticles('eyeglow');
-
-      //rocket flare
-      emitter2 = game.add.emitter(11, 35, 10);
-      emitter2.makeParticles('rocketflare');
-      emitter2.gravity = 500;
-
-      hsw.addChild(emitter);
-      hsw.addChild(emitter2);
 
       explosions = game.add.group();
       for (var i = 0; i < 10; i++)
@@ -125,21 +105,6 @@ BasicGame.Game.prototype = {
       this.spawn(1);
       game.time.events.loop(5000, this.spawn, this);
 
-
-      hsw.body.drag.set(100);
-      hsw.body.maxVelocity.set(200);
-
-      this.hsw = hsw;
-
-      //  hamster eye beams
-      beams = game.add.group();
-      beams.enableBody = true;
-      beams.physicsBodyType = Phaser.Physics.ARCADE;
-      beams.createMultiple(40, 'beam');
-      beams.setAll('anchor.x', 0.5);
-      beams.setAll('anchor.y', 0.5);
-      this.beams = beams;
-
       //  Game input
       cursors = game.input.keyboard.createCursorKeys();
       game.input.keyboard.addKeyCapture([ Phaser.Keyboard.SPACEBAR ]);
@@ -166,10 +131,12 @@ BasicGame.Game.prototype = {
       this.cursors = cursors;
 
       //add operation and operand indicators to hamster
-      hamalog = game.add.text(hsw.body.centerX, hsw.body.y, this.operations.cur, dialog_style);
+      hamalog = game.add.text(this.hsw.body.centerX, this.hsw.body.y, this.operations.cur, dialog_style);
       hamalog.addChild(game.add.text(10, 0, this.operands.cur, dialog_style));
       hamalog.alpha = 0;
       this.hamalog = hamalog;
+
+      this.hsw=hsw;
 
     },
 
@@ -194,7 +161,7 @@ BasicGame.Game.prototype = {
       //baddie physics
       for (i = 0; i < this.baddies.length; i++) {
         game.physics.arcade.moveToObject(this.baddies.children[i], this.hsw);
-        game.physics.arcade.overlap(this.beams, this.baddies.children[i], this.collisionHandler, null, this);
+        game.physics.arcade.overlap(this.hsw.beams, this.baddies.children[i], this.collisionHandler, null, this);
         game.physics.arcade.collide(this.hsw, this.baddies.children[i]);
 
       }
@@ -236,6 +203,10 @@ BasicGame.Game.prototype = {
         baddie.addChild(this.game.add.text(-6, -30, number, style));
         this.game.physics.arcade.enableBody(baddie);
         this.game.physics.enable(baddie, Phaser.Physics.ARCADE);
+        baddie.scale.x = (0.1);
+        baddie.scale.y = (0.1);
+        this.game.add.tween(baddie.scale).to({ x: 1, y:1 }, 1000, Phaser.Easing.Linear.None, true);
+
         return baddie;
     },
 
@@ -316,9 +287,10 @@ BasicGame.Game.prototype = {
       game = this.game;
       hamalog= this.hamalog;
       beam = this.beam;
+      hsw = this.hsw;
       if (game.time.now > this.beamTime)
       {
-          beam = this.beams.getFirstExists(false);
+          beam = this.hsw.beams.getFirstExists(false);
 
           if (beam)
           {

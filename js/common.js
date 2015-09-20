@@ -33,3 +33,47 @@ function dialog_list(game, a, x, y) {
   }
 
 }
+
+function create_hsw(game) {
+  hsw = game.add.sprite(game.world.centerX, game.world.centerY, 'hsw');
+  //  hamster physics settings
+  game.physics.arcade.enableBody(hsw);
+  game.physics.enable(hsw, Phaser.Physics.ARCADE);
+
+  hsw.body.collideWorldBounds=true;
+  game.camera.follow(hsw);
+
+  hsw.anchor.setTo(0.5, 0.5);
+
+  //glowing eyes
+  emitter = game.add.emitter(0, -25, 5);
+  emitter.makeParticles('eyeglow');
+
+  //rocket flare
+  emitter2 = game.add.emitter(11, 35, 10);
+  emitter2.makeParticles('rocketflare');
+  emitter2.gravity = 500;
+
+  hsw.addChild(emitter);
+  hsw.addChild(emitter2);
+
+  hsw.body.drag.set(100);
+  hsw.body.maxVelocity.set(200);
+
+  hsw.alpha=0;
+
+  game.add.tween(hsw).to( { alpha: 1 }, 1000, Phaser.Easing.Linear.None, true);
+
+  //  hamster eye beams
+  beams = game.add.group();
+  beams.enableBody = true;
+  beams.physicsBodyType = Phaser.Physics.ARCADE;
+  beams.createMultiple(40, 'beam');
+  beams.setAll('anchor.x', 0.5);
+  beams.setAll('anchor.y', 0.5);
+
+  hsw.beams = beams;
+
+  return hsw;
+
+}
