@@ -12,6 +12,8 @@ BasicGame.Preloader.prototype = {
 
 	preload: function () {
 
+		this.game.load.image('seed', 'images/seed.png');
+		this.game.load.image('title', 'images/main.png');
 		this.game.load.image('space', 'images/stars.jpg');
 		this.game.load.image('hsw', 'images/hsw.png');
 		this.game.load.image('baddie', 'images/baddie.png');

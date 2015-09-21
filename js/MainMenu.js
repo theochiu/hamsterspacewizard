@@ -17,10 +17,22 @@ BasicGame.MainMenu.prototype = {
 		this.music = this.add.audio('calm');
 		this.music.play();
 
+		this.add.tileSprite(0, 0, 800, 600, 'space');
 
-		this.title = this.add.text(100, 100, 'Hamster. Space. Wizard.', {'font': '36px Arial', 'fill':'#fff'});
-		this.title = this.add.text(200, 175, 'Click on the hamster space wizard to begin hamulation.', {'font': '12px Arial', 'fill':'#fff'});
-		this.playButton = this.add.button(250, 200, 'hsw', this.startGame, this);
+		//add world bounds
+		this.world.setBounds(0, 0, 800, 600);
+
+		this.title = this.add.sprite(this.world.centerX, 200, 'title');
+		this.title.anchor.setTo(0.5, 0.5);
+
+
+		this.instructions = this.add.text(this.world.centerX, 375, 'Click on the hammyhams to begin hamulation.', {'font': '24px Arial', 'fill':'#fff'});
+		this.instructions.anchor.setTo(0.5, 0.5);
+
+		this.playButton = this.add.button(this.world.centerX, 450, 'hsw', this.startGame, this);
+		this.playButton.anchor.setTo(0.5, 0.5);
+
+
 
 
 	},
