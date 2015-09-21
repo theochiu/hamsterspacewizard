@@ -34,8 +34,8 @@ function dialog_list(game, a, x, y) {
 
 }
 
-function create_hsw(game) {
-  hsw = game.add.sprite(game.world.centerX, game.world.centerY, 'hsw');
+function create_hsw(x, y, game) {
+  hsw = game.add.sprite(x, y, 'hsw');
   //  hamster physics settings
   game.physics.arcade.enableBody(hsw);
   game.physics.enable(hsw, Phaser.Physics.ARCADE);
@@ -75,5 +75,122 @@ function create_hsw(game) {
   hsw.beams = beams;
 
   return hsw;
+
+}
+
+function SeedBank(game) {
+  this.game = game;
+  this.seeds = game.add.group();
+  this.seeds.enableBody = true;
+  this.seeds.physicsBodyType = Phaser.Physics.ARCADE;
+
+  this.addSeed = function (x, y, number) {
+    seed = game.add.sprite(x, y, 'seed');
+    seed.anchor.setTo(0.5, 0.5);
+    style = {font: "20px Arial", fill: "#e9deb1", align: "center" };
+    seed.number = number;
+    seed.addChild(game.add.text(-7, 0, number, style));
+    this.game.physics.arcade.enableBody(seed);
+    this.game.physics.enable(seed, Phaser.Physics.ARCADE);
+    this.game.add.tween(seed).to({angle: 360}, 8000, Phaser.Easing.Linear.None, true, 0, -1);
+    seed.body.collideWorldBounds=true;
+
+    this.seeds.add(seed);
+
+  }
+
+  this.update = function (hsw) {
+    //baddie physics
+    for (i = 0; i < this.seeds.length; i++) {
+      //this.game.physics.arcade.moveToObject(this.seeds.children[i], hsw);
+      //this.game.physics.arcade.overlap(hsw.beams, this.seeds.children[i], this.collisionHandler, null, game);
+      this.game.physics.arcade.collide(hsw, this.seeds.children[i]);
+
+    }
+
+    this.game.physics.arcade.collide(this.seeds);
+
+  }
+
+}
+
+function create_baddies(game) {
+  baddies = game.add.group();
+  baddies.enableBody = true;
+  baddies.physicsBodyType = Phaser.Physics.ARCADE;
+  return baddies;
+}
+
+function create_baddie(x, y, number, game) {
+    baddie = game.add.sprite(x, y, 'baddie');
+    baddie.anchor.setTo(0.5, 0.5);
+    var style = { font: "20px Arial", fill: "#ffff00", align: "center" };
+    baddie.number = number;
+    baddie.addChild(game.add.text(-6, -30, number, style));
+    game.physics.arcade.enableBody(baddie);
+    game.physics.enable(baddie, Phaser.Physics.ARCADE);
+    baddie.scale.x = (0.1);
+    baddie.scale.y = (0.1);
+    game.add.tween(baddie.scale).to({ x: 1, y:1 }, 1000, Phaser.Easing.Linear.None, true);
+    baddie.bringToTop();
+    return baddie;
+}
+
+function SpawnPoint(x, y, game) {
+  this.x = x;
+  this.y = y;
+  this.game = game;
+  //add black hole
+  this.black_hole = game.add.sprite(x, y, 'black_hole');
+  this.baddies = create_baddies(game);
+
+  this.spawn = function(n) {
+      var n = (typeof n === 'undefined') ? 1 : n;
+
+      for (i = 0; i < n; i ++) {
+        number = Math.round(Math.random() * 10);
+        if (number == 0) {
+          number = 10;
+        }
+
+        baddie = create_baddie(this.x + 50, this.y + 50, number, this.game);
+        baddie.animations.add('kaboom');
+        baddie.body.bounce.setTo(1, 1);
+        this.baddies.add(baddie);
+      }
+
+
+  }
+
+  this.collisionHandler = function (baddie, bullet) {
+      //  When a bullet hits an alien we kill them both
+      baddie.number = eval(baddie.number + bullet.op + bullet.number);
+      baddie.children[0].text = baddie.number;
+      if (baddie.number == 0) {
+        baddie.kill();
+
+        var explosionAnimation = explosions.getFirstExists(false);
+        explosionAnimation.reset(baddie.x, baddie.y);
+        explosionAnimation.play('kaboom', 30, false, true);
+
+      }
+
+      bullet.kill();
+  },
+
+
+  this.update = function(hsw) {
+      //baddie physics
+      for (i = 0; i < this.baddies.length; i++) {
+        this.game.physics.arcade.moveToObject(this.baddies.children[i], hsw);
+        this.game.physics.arcade.overlap(hsw.beams, this.baddies.children[i], this.collisionHandler, null, game);
+        this.game.physics.arcade.collide(hsw, this.baddies.children[i]);
+
+      }
+
+      this.game.physics.arcade.collide(this.baddies);
+
+
+  }
 
 }

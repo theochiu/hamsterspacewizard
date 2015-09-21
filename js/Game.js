@@ -25,8 +25,8 @@ BasicGame.Game = function (game) {
     this.music;
 
     this.hsw;
-    this.baddies;
-    this.black_hole;
+    this.spawn_point;
+    this.seed_bank;
     this.cursors;
     this.tween;
 
@@ -56,22 +56,24 @@ BasicGame.Game.prototype = {
       game = this.game;
 
       //add world bounds
-      game.world.setBounds(0, 0, 1000, 800);
-      game.world.resize(1000, 800);
+      game.world.setBounds(0, 0, 800, 600);
+      //game.world.resize(800, 600);
       game.physics.setBoundsToWorld();
 
-      game.add.tileSprite(0, 0, 1000, 800, 'space');
+      game.add.tileSprite(0, 0, 800, 600, 'space');
 
-
-      this.hsw = create_hsw(game);
-
-      //add black hole
-      this.black_hole = game.add.sprite(game.world.randomX, game.world.randomY, 'black_hole');
+      this.hsw = create_hsw(game.world.centerX, 450, game);
+      this.seed_bank = new SeedBank(game);
+      this.seed_bank.addSeed(100, 100, 2);
+      this.seed_bank.addSeed(700, 100, 3);
+      this.seed_bank.addSeed(100, 500, 3);
+      this.seed_bank.addSeed(700, 500, 2);
 
       music = game.add.audio('calm');
       music.loop = true;
       music.play();
 
+      //prep explosions
       explosions = game.add.group();
       for (var i = 0; i < 10; i++)
       {
@@ -96,14 +98,9 @@ BasicGame.Game.prototype = {
       dialog.fixedToCamera = true;
       this.dialog = dialog;
 
-      baddies = game.add.group();
-      baddies.enableBody = true;
-      baddies.physicsBodyType = Phaser.Physics.ARCADE;
-      this.baddies = baddies;
-
-
-      this.spawn(1);
-      game.time.events.loop(5000, this.spawn, this);
+      this.spawn_point = new SpawnPoint(350, 250, game);
+      this.spawn_point.spawn(1);
+      game.time.events.loop(5000, this.spawn_point.spawn, this.spawn_point);
 
       //  Game input
       cursors = game.input.keyboard.createCursorKeys();
@@ -158,56 +155,17 @@ BasicGame.Game.prototype = {
           this.fuel_gauge.context.fillStyle = '#0f0';
       }
 
-      //baddie physics
-      for (i = 0; i < this.baddies.length; i++) {
-        game.physics.arcade.moveToObject(this.baddies.children[i], this.hsw);
-        game.physics.arcade.overlap(this.hsw.beams, this.baddies.children[i], this.collisionHandler, null, this);
-        game.physics.arcade.collide(this.hsw, this.baddies.children[i]);
-
-      }
-
-      game.physics.arcade.collide(baddies);
+      this.spawn_point.update(hsw);
+      this.seed_bank.update(hsw);
 
       this.hamster_control();
+
 
       if (game.input.keyboard.isDown(Phaser.Keyboard.SPACEBAR))
       {
           this.fireBeam();
       }
 
-    },
-
-
-    spawn: function (n) {
-        var n = (typeof n === 'undefined') ? 1 : n;
-
-        for (i = 0; i < n; i ++) {
-          number = Math.round(Math.random() * 10);
-          if (number == 0) {
-            number = 10;
-          }
-
-          baddie = this.create_baddie(this.black_hole.x + 50, this.black_hole.y + 50, number);
-          baddie.animations.add('kaboom');
-          baddie.body.bounce.setTo(1, 1);
-          this.baddies.add(baddie);
-        }
-
-    },
-
-    create_baddie: function  (x, y, number) {
-        baddie = this.game.add.sprite(x, y, 'baddie');
-        baddie.anchor.setTo(0.5, 0.5);
-        var style = { font: "20px Arial", fill: "#ffff00", align: "center" };
-        baddie.number = number;
-        baddie.addChild(this.game.add.text(-6, -30, number, style));
-        this.game.physics.arcade.enableBody(baddie);
-        this.game.physics.enable(baddie, Phaser.Physics.ARCADE);
-        baddie.scale.x = (0.1);
-        baddie.scale.y = (0.1);
-        this.game.add.tween(baddie.scale).to({ x: 1, y:1 }, 1000, Phaser.Easing.Linear.None, true);
-
-        return baddie;
     },
 
     hamster_control: function() {
@@ -222,7 +180,7 @@ BasicGame.Game.prototype = {
 
       if (cursors.up.isDown && fuel > 0)
       {
-          fuel = fuel - 1.5;
+          this.fuel = fuel - 1.5;
           game.physics.arcade.accelerationFromRotation(hsw.rotation+300, 1000, hsw.body.acceleration);
           hsw.children[1].start(true, 10, frequency=10, quantity=10);
       }
@@ -234,7 +192,7 @@ BasicGame.Game.prototype = {
       if (cursors.up.isUp) {
         hsw.children[1].kill();
         if (fuel < this.max_fuel) {
-          fuel = fuel + 0.75;
+          this.fuel = fuel + 0.75;
         }
 
       }
@@ -260,27 +218,10 @@ BasicGame.Game.prototype = {
         }
     }
 
-
     else
     {
         hsw.body.angularVelocity = 0;
     }
-  },
-
-  collisionHandler: function (baddie, bullet) {
-      //  When a bullet hits an alien we kill them both
-      baddie.number = eval(baddie.number + this.operations.cur + bullet.number);
-      baddie.children[0].text = baddie.number;
-      if (baddie.number == 0) {
-        baddie.kill();
-
-        var explosionAnimation = explosions.getFirstExists(false);
-        explosionAnimation.reset(baddie.x, baddie.y);
-        explosionAnimation.play('kaboom', 30, false, true);
-
-      }
-
-      bullet.kill();
   },
 
   fireBeam : function () {
@@ -301,6 +242,7 @@ BasicGame.Game.prototype = {
               game.add.tween(hamalog).to( { alpha: 0 }, 2000, Phaser.Easing.Linear.None, true);
 
               beam.number = this.operands.cur;
+              beam.op = this.operations.cur;
               x_offset = 25 * Math.cos(hsw.rotation + (Math.PI/2));
               y_offset = 25 * Math.sin(hsw.rotation + (Math.PI/2));
 
