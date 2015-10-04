@@ -14,9 +14,6 @@ BasicGame.MainMenu.prototype = {
 		//	Here all we're doing is playing some music and adding a picture and button
 		//	Naturally I expect you to do something significantly better :)
 
-		this.music = this.add.audio('calm');
-		this.music.play();
-
 		this.add.tileSprite(0, 0, 800, 600, 'space');
 
 		//add world bounds
@@ -46,10 +43,9 @@ BasicGame.MainMenu.prototype = {
 	startGame: function (pointer) {
 
 		//	Ok, the Play Button has been clicked or touched, so let's stop the music (otherwise it'll carry on playing)
-		this.music.stop();
 
 		//	And start the actual game
-		this.state.start('Game');
+		this.state.start('Game', true, false, 0);
 
 	}
 

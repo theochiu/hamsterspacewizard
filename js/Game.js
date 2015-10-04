@@ -52,22 +52,34 @@ BasicGame.Game = function (game) {
 
 BasicGame.Game.prototype = {
 
+    init: function(level) {
+        this.l = level;
+    },
+
     create: function () {
       game = this.game;
 
+      wx = 800;
+      wy = 600;
+
+      level_conf = levels[this.l];
+
       //add world bounds
-      game.world.setBounds(0, 0, 800, 600);
+      game.world.setBounds(0, 0, wx, wy);
       //game.world.resize(800, 600);
       game.physics.setBoundsToWorld();
 
-      game.add.tileSprite(0, 0, 800, 600, 'space');
+      game.add.tileSprite(0, 0, wx, wy, 'space');
 
-      this.hsw = create_hsw(game.world.centerX, 450, game);
+      h = level_conf['hsw'];
+      this.hsw = create_hsw(800 * h['loc'][0] , 600 * h['loc'][1], game);
+
+      s = level_conf['seeds']
       this.seed_bank = new SeedBank(game);
-      this.seed_bank.addSeed(100, 100, 2);
-      this.seed_bank.addSeed(700, 100, 3);
-      this.seed_bank.addSeed(100, 500, 3);
-      this.seed_bank.addSeed(700, 500, 2);
+      for (var a = 0; a < s['vals'].length; a++) {
+        loc = s['locs'][a];
+        this.seed_bank.addSeed(loc[0] * game.world.width, loc[1] * game.world.height, s['vals'][a]);
+      }
 
       music = game.add.audio('calm');
       music.loop = true;
@@ -92,13 +104,13 @@ BasicGame.Game.prototype = {
       this.fuel_gauge = game.add.bitmapData(100, 10);
       dialog.addChild(game.add.sprite(50, 53,this.fuel_gauge));
 
-      this.operations = new dialog_list(game, ['-', '+'], 450, 516);
-      this.operands = new dialog_list(game, [2,3,4], 450, 532);
+      this.operations = new dialog_list(game, h['operations'], 450, 516);
+      this.operands = new dialog_list(game, h['operands'], [2,3,4], 450, 532);
 
       dialog.fixedToCamera = true;
       this.dialog = dialog;
 
-      this.spawn_point = new SpawnPoint(350, 250, game);
+      this.spawn_point = new SpawnPoint(level_conf['baddies'], game);
       this.spawn_point.spawn(1);
       game.time.events.loop(5000, this.spawn_point.spawn, this.spawn_point);
 

@@ -136,29 +136,23 @@ function create_baddie(x, y, number, game) {
     return baddie;
 }
 
-function SpawnPoint(x, y, game) {
-  this.x = x;
-  this.y = y;
+function SpawnPoint(config, game) {
+  this.x = config['loc'][0] * game.world.width;
+  this.y = config['loc'][1] * game.world.height;
+  this.config = config;
   this.game = game;
   //add black hole
-  this.black_hole = game.add.sprite(x, y, 'black_hole');
+  this.black_hole = game.add.sprite(this.x, this.y, 'black_hole');
   this.baddies = create_baddies(game);
+  this.spawned = 0;
 
-  this.spawn = function(n) {
-      var n = (typeof n === 'undefined') ? 1 : n;
-
-      for (i = 0; i < n; i ++) {
-        number = Math.round(Math.random() * 10);
-        if (number == 0) {
-          number = 10;
-        }
-
-        baddie = create_baddie(this.x + 50, this.y + 50, number, this.game);
-        baddie.animations.add('kaboom');
-        baddie.body.bounce.setTo(1, 1);
-        this.baddies.add(baddie);
-      }
-
+  this.spawn = function() {
+      number = this.config['vals'][this.spawned];
+      baddie = create_baddie(this.x + 50, this.y + 50, number, this.game);
+      baddie.animations.add('kaboom');
+      baddie.body.bounce.setTo(1, 1);
+      this.baddies.add(baddie);
+      this.spawned++;
 
   }
 
