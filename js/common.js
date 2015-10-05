@@ -143,16 +143,26 @@ function SpawnPoint(config, game) {
   this.game = game;
   //add black hole
   this.black_hole = game.add.sprite(this.x, this.y, 'black_hole');
+  this.death_toll = 0;
+  //center this block hole to the location coord
+  this.black_hole.x = this.black_hole.x - (this.black_hole.width / 2);
+  this.black_hole.y = this.black_hole.y - (this.black_hole.height / 2);
+
   this.baddies = create_baddies(game);
   this.spawned = 0;
 
   this.spawn = function() {
-      number = this.config['vals'][this.spawned];
-      baddie = create_baddie(this.x + 50, this.y + 50, number, this.game);
-      baddie.animations.add('kaboom');
-      baddie.body.bounce.setTo(1, 1);
-      this.baddies.add(baddie);
-      this.spawned++;
+      if ((this.config['infinite'] === false) && (this.spawned >= this.config['vals'].length)) {
+        //do nothing
+      }
+      else {
+        number = this.config['vals'][this.spawned];
+        baddie = create_baddie(this.x, this.y, number, this.game);
+        baddie.animations.add('kaboom');
+        baddie.body.bounce.setTo(1, 1);
+        this.baddies.add(baddie);
+        this.spawned++;
+      }
 
   }
 
@@ -162,7 +172,7 @@ function SpawnPoint(config, game) {
       baddie.children[0].text = baddie.number;
       if (baddie.number == 0) {
         baddie.kill();
-
+        this.death_toll++;
         var explosionAnimation = explosions.getFirstExists(false);
         explosionAnimation.reset(baddie.x, baddie.y);
         explosionAnimation.play('kaboom', 30, false, true);
@@ -177,14 +187,12 @@ function SpawnPoint(config, game) {
       //baddie physics
       for (i = 0; i < this.baddies.length; i++) {
         this.game.physics.arcade.moveToObject(this.baddies.children[i], hsw);
-        this.game.physics.arcade.overlap(hsw.beams, this.baddies.children[i], this.collisionHandler, null, game);
+        this.game.physics.arcade.overlap(hsw.beams, this.baddies.children[i], this.collisionHandler, null, this);
         this.game.physics.arcade.collide(hsw, this.baddies.children[i]);
 
       }
 
       this.game.physics.arcade.collide(this.baddies);
-
-
   }
 
 }

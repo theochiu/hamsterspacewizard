@@ -54,6 +54,7 @@ BasicGame.Game.prototype = {
 
     init: function(level) {
         this.l = level;
+        this.level_conf = levels[this.l];
     },
 
     create: function () {
@@ -62,7 +63,7 @@ BasicGame.Game.prototype = {
       wx = 800;
       wy = 600;
 
-      level_conf = levels[this.l];
+      level_conf =this.level_conf;
 
       //add world bounds
       game.world.setBounds(0, 0, wx, wy);
@@ -105,14 +106,14 @@ BasicGame.Game.prototype = {
       dialog.addChild(game.add.sprite(50, 53,this.fuel_gauge));
 
       this.operations = new dialog_list(game, h['operations'], 450, 516);
-      this.operands = new dialog_list(game, h['operands'], [2,3,4], 450, 532);
+      this.operands = new dialog_list(game, h['operands'], 450, 532);
 
       dialog.fixedToCamera = true;
       this.dialog = dialog;
 
       this.spawn_point = new SpawnPoint(level_conf['baddies'], game);
       this.spawn_point.spawn(1);
-      game.time.events.loop(5000, this.spawn_point.spawn, this.spawn_point);
+      game.time.events.loop(1000, this.spawn_point.spawn, this.spawn_point);
 
       //  Game input
       cursors = game.input.keyboard.createCursorKeys();
@@ -144,6 +145,12 @@ BasicGame.Game.prototype = {
       hamalog.addChild(game.add.text(10, 0, this.operands.cur, dialog_style));
       hamalog.alpha = 0;
       this.hamalog = hamalog;
+
+      hsw.scale.x = hsw.scale.x * -1; //flip hammy over
+
+      mission = game.add.text(wx /2, wy/8, level_conf["instructions"], {font: "20px Arial", fill: "#eeeeee", align: "center"});
+      mission.anchor.setTo(0.5, 0.5);
+      game.add.tween(mission).to({alpha:0}, 2000, Phaser.Easing.Linear.None, true, 5000);
 
       this.hsw=hsw;
 
@@ -177,6 +184,15 @@ BasicGame.Game.prototype = {
       {
           this.fireBeam();
       }
+
+      //check the goals of the Game
+      mission = this.level_conf['mission'];
+      if (mission == 'killemall') {
+        if (this.spawn_point.death_toll === this.level_conf['baddies']['vals'].length) {
+          this.quitGame();
+        }
+      }
+
 
     },
 
@@ -275,9 +291,10 @@ BasicGame.Game.prototype = {
 
         //  Here you should destroy anything you no longer need.
         //  Stop music, delete sprites, purge caches, free resources, all that good stuff.
-
-        //  Then let's go back to the main menu.
-        this.state.start('MainMenu');
+        t = this.game.add.text(wx /2, wy/8, "Level Complete!", {font: "20px Arial", fill: "#eeeeee", align: "center"});
+        t.anchor.setTo(0.5, 0.5);
+        end = this.game.add.tween(t).to({alpha:0}, 2000, Phaser.Easing.Linear.None, true, 500);
+        end.onComplete.add(function () {music.stop(); this.l++; this.state.start('Game', true, false, this.l);}, this);
 
     }
 
