@@ -165,10 +165,20 @@ function SpawnPoint(config, game) {
   this.spawned = 0;
 
   this.spawn = function() {
-      if ((this.config['infinite'] === false) && (this.spawned >= this.config['vals'].length)) {
-        //do nothing
+      if (this.config['infinite'] === false) {
+        if (this.spawned < this.config['vals'].length) {
+          number = this.config['vals'][this.spawned];
+          baddie = create_baddie(this.x, this.y, number, this.game);
+          baddie.animations.add('kaboom');
+          baddie.body.bounce.setTo(1, 1);
+          this.baddies.add(baddie);
+          this.spawned++;
+        }
       }
+      //infinite baddies
       else {
+        if (this.spawned >= this.config['vals'].length) {this.spawned=0;}
+
         number = this.config['vals'][this.spawned];
         baddie = create_baddie(this.x, this.y, number, this.game);
         baddie.animations.add('kaboom');
