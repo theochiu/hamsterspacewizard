@@ -99,6 +99,19 @@ function SeedBank(game) {
 
   }
 
+  this.getClosest = function(number) {
+    diffs = [];
+    for (var i = 0; i < this.seeds.length; i++) {
+      diff = this.seeds.children[i].number + number;
+      diffs.push(Math.abs(diff));
+    }
+
+    mi = Math.min.apply(null, diffs);
+    j = diffs.indexOf(mi);
+    return this.seeds.children[j];
+
+  }
+
   this.update = function (hsw) {
     //baddie physics
     for (i = 0; i < this.seeds.length; i++) {
@@ -183,10 +196,12 @@ function SpawnPoint(config, game) {
   },
 
 
-  this.update = function(hsw) {
+  this.update = function(hsw, seed_bank) {
       //baddie physics
-      for (i = 0; i < this.baddies.length; i++) {
-        this.game.physics.arcade.moveToObject(this.baddies.children[i], hsw);
+      for (var i = 0; i < this.baddies.length; i++) {
+        number = this.baddies.children[i].number;
+        seed = seed_bank.getClosest(number);
+        this.game.physics.arcade.moveToObject(this.baddies.children[i], seed);
         this.game.physics.arcade.overlap(hsw.beams, this.baddies.children[i], this.collisionHandler, null, this);
         this.game.physics.arcade.collide(hsw, this.baddies.children[i]);
 

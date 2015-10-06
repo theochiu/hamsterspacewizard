@@ -174,7 +174,7 @@ BasicGame.Game.prototype = {
           this.fuel_gauge.context.fillStyle = '#0f0';
       }
 
-      this.spawn_point.update(hsw);
+      this.spawn_point.update(hsw, this.seed_bank);
       this.seed_bank.update(hsw);
 
       this.hamster_control();
