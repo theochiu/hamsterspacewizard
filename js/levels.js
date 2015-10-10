@@ -9,6 +9,7 @@ levels = [
       "shuffle" : false,
       "vals" : [1, 1, -1, 1, -1, 1, 2, -1, 2, -2],
       "loc" : [0.9, 0.5],
+      "spawn_rate" : 2000,
     },
     "hsw": {
       "loc": [0.1, 0.5],
@@ -33,6 +34,7 @@ levels = [
       "shuffle" : true,
       "vals" : [1, 1, -1, 1, -1, 1, 2, -1, 2, -2],
       "loc" : [0.9, 0.5],
+      "spawn_rate" : 2000,
     },
 
     "hsw": {

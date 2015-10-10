@@ -12,7 +12,6 @@ BasicGame.Preloader.prototype = {
 
 	preload: function () {
 
-		this.game.load.image('seed', 'images/seed.png');
 		this.game.load.image('title', 'images/main.png');
 		this.game.load.image('space', 'images/stars.jpg');
 		this.game.load.image('hsw', 'images/hsw.png');
@@ -22,7 +21,9 @@ BasicGame.Preloader.prototype = {
 		this.game.load.image('rocketflare', 'images/flame.png');
 		this.game.load.image('black_hole', 'images/black_hole.png');
 		this.game.load.spritesheet('kaboom', 'images/explode.png', 128, 128);
+		this.game.load.spritesheet('hamsplode', 'images/hamsplode.png', 128, 128);
 		this.game.load.audio('calm', ['music/calm.mp3', 'music/calm.ogg']);
+		this.game.load.spritesheet('seed', 'images/seed.png', 26, 49);
 
 
 	},
@@ -30,7 +31,7 @@ BasicGame.Preloader.prototype = {
 	create: function () {
 
 		//	Once the load has finished we disable the crop because we're going to sit in the update loop for a short while as the music decodes
-		this.preloadBar.cropEnabled = false;
+		//this.preloadBar.cropEnabled = false;
 
 	},
 

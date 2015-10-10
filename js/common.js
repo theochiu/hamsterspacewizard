@@ -87,6 +87,7 @@ function SeedBank(game) {
   this.addSeed = function (x, y, number) {
     seed = game.add.sprite(x, y, 'seed');
     seed.anchor.setTo(0.5, 0.5);
+    seed.frame = 0;
     style = {font: "20px Arial", fill: "#e9deb1", align: "center" };
     seed.number = number;
     seed.addChild(game.add.text(-7, 0, number, style));
@@ -104,6 +105,8 @@ function SeedBank(game) {
     for (var i = 0; i < this.seeds.length; i++) {
       diff = this.seeds.children[i].number + number;
       diffs.push(Math.abs(diff));
+      //make all the baddies go after an exposed seed
+      if (this.seeds.children[i].number == 0) {return this.seeds.children[i]}
     }
 
     mi = Math.min.apply(null, diffs);
@@ -115,8 +118,6 @@ function SeedBank(game) {
   this.update = function (hsw) {
     //baddie physics
     for (i = 0; i < this.seeds.length; i++) {
-      //this.game.physics.arcade.moveToObject(this.seeds.children[i], hsw);
-      //this.game.physics.arcade.overlap(hsw.beams, this.seeds.children[i], this.collisionHandler, null, game);
       this.game.physics.arcade.collide(hsw, this.seeds.children[i]);
 
     }
@@ -149,6 +150,15 @@ function create_baddie(x, y, number, game) {
     return baddie;
 }
 
+
+function crack (seed) {
+  seed.frame = 1;
+  var seedCrack = seedcracks.getFirstExists(false);
+  seedCrack.reset(seed.x, seed.y);
+  seedCrack.play('hamsplode', 30, false, true);
+  seed.number = 0;
+}
+
 function SpawnPoint(config, game) {
   this.x = config['loc'][0] * game.world.width;
   this.y = config['loc'][1] * game.world.height;
@@ -156,11 +166,10 @@ function SpawnPoint(config, game) {
   this.game = game;
   //add black hole
   this.black_hole = game.add.sprite(this.x, this.y, 'black_hole');
-  this.death_toll = 0;
   //center this block hole to the location coord
   this.black_hole.x = this.black_hole.x - (this.black_hole.width / 2);
   this.black_hole.y = this.black_hole.y - (this.black_hole.height / 2);
-
+  this.death_toll = 0;
   this.baddies = create_baddies(game);
   this.spawned = 0;
 
@@ -189,31 +198,73 @@ function SpawnPoint(config, game) {
 
   }
 
+  this.kill = function (baddie) {
+    baddie.kill();
+    var explosionAnimation = explosions.getFirstExists(false);
+    explosionAnimation.reset(baddie.x, baddie.y);
+    explosionAnimation.play('kaboom', 30, false, true);
+    this.death_toll++;
+  }
+
   this.collisionHandler = function (baddie, bullet) {
       //  When a bullet hits an alien we kill them both
       baddie.number = eval(baddie.number + bullet.op + bullet.number);
       baddie.children[0].text = baddie.number;
       if (baddie.number == 0) {
-        baddie.kill();
-        this.death_toll++;
-        var explosionAnimation = explosions.getFirstExists(false);
-        explosionAnimation.reset(baddie.x, baddie.y);
-        explosionAnimation.play('kaboom', 30, false, true);
-
+        this.kill(baddie);
       }
 
       bullet.kill();
   },
 
+  this.eatSeed = function(baddie, seed) {
+    b = baddie.number;
+    s = seed.number;
+    //first we do something with the baddie #
+    //are they opposing signs?
+    if ((b * s) < 0) {
+        if (Math.abs(b) == Math.abs(s)) {
+          this.kill(baddie);
+          crack(seed);
+        } else if (Math.abs(b) > Math.abs(s)) {
+          baddie.number = b + s;
+          baddie.children[0].text = baddie.number;
+          crack(seed);
+        } else {
+          this.kill(baddie);
+          seed.number = b + s;
+          seed.children[0].text = seed.number;
+        }
+
+    } else if (s == 0) {
+      //the baddie is going to eat this seed, oh no!
+      seed.kill();
+      seed.destroy();
+    } else {}
+
+
+    if (baddie.number < seed.number) {
+      baddie.k
+    }
+
+    //then we
+
+  }
 
   this.update = function(hsw, seed_bank) {
       //baddie physics
       for (var i = 0; i < this.baddies.length; i++) {
         number = this.baddies.children[i].number;
         seed = seed_bank.getClosest(number);
-        this.game.physics.arcade.moveToObject(this.baddies.children[i], seed);
+        if (seed === undefined) { this.game.physics.arcade.moveToObject(this.baddies.children[i], hsw);}
+        else {
+          this.game.physics.arcade.moveToObject(this.baddies.children[i], seed);
+        }
         this.game.physics.arcade.overlap(hsw.beams, this.baddies.children[i], this.collisionHandler, null, this);
         this.game.physics.arcade.collide(hsw, this.baddies.children[i]);
+        for (var j = 0; j < seed_bank.seeds.length; j++) {
+          this.game.physics.arcade.overlap(this.baddies.children[i], seed_bank.seeds.children[j], this.eatSeed, null, this);
+        }
 
       }
 

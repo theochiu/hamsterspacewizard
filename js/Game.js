@@ -36,6 +36,7 @@ BasicGame.Game = function (game) {
     this.operands;
 
     this.explosions;
+    this.seedcracks;
 
     this.beam;
     this.beamTime = 0;
@@ -95,6 +96,15 @@ BasicGame.Game.prototype = {
           explosionAnimation.animations.add('kaboom');
       }
 
+      //prep explosions
+      seedcracks = game.add.group();
+      for (var i = 0; i < 10; i++)
+      {
+          var seedCrack = seedcracks.create(0, 0, 'hamsplode', [0], false);
+          seedCrack.anchor.setTo(0.5, 0.5);
+          seedCrack.animations.add('hamsplode');
+      }
+
       //dialog
       dialog_style = { font: "16px Arial", fill: "#eeeeee", align: "center" };
       dialog = game.add.text(325, 500, "Inventory", dialog_style);
@@ -113,7 +123,7 @@ BasicGame.Game.prototype = {
 
       this.spawn_point = new SpawnPoint(level_conf['baddies'], game);
       this.spawn_point.spawn(1);
-      game.time.events.loop(1000, this.spawn_point.spawn, this.spawn_point);
+      game.time.events.loop(level_conf['baddies']['spawn_rate'], this.spawn_point.spawn, this.spawn_point);
 
       //  Game input
       cursors = game.input.keyboard.createCursorKeys();
