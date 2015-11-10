@@ -1,4 +1,4 @@
-#Hamster Space Wizard
+#Hamster Space Wizard (pre-alpha release)
 
 ##A HTLM5/JS game that uses the lovely Phaser.io game engine.  
 
